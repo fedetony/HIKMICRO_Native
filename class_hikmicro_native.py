@@ -1,4 +1,3 @@
-import cv2
 import platform
 import subprocess
 import re
@@ -7,6 +6,9 @@ import numpy as np
 import os
 import sys
 import shlex
+# os.environ["OPENCV_VIDEOIO_DEBUG"] = "1"
+# os.environ["OPENCV_LOG_LEVEL"] = "DEBUG"
+import cv2
 
 import time
 from pathlib import Path
@@ -384,7 +386,7 @@ class HIKMICRO_NATIVE:
     def find_windows_camera(self):
         candidates = []
         for i in range(10):
-            cap = cv2.VideoCapture(i)
+            cap = cv2.VideoCapture(i, cv2.CAP_MSMF)
             if not cap.isOpened():
                 continue
             ret, frame = cap.read()
@@ -392,8 +394,24 @@ class HIKMICRO_NATIVE:
                 h, w = frame.shape[:2]
                 self.log(f"Camera {i}: {w}x{h}")
                 candidates.append((i, w, h))
-            cap.release()        
+            cap.release()   
         if not candidates:
+            self.log("No compatible thermal camera found with CAP_MSMF trying CAP_DSHOW")
+            for i in range(10):
+                cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
+                if not cap.isOpened():
+                    continue
+                ret, frame = cap.read()
+                if ret:
+                    h, w = frame.shape[:2]
+                    self.log(f"Camera {i}: {w}x{h}")
+                    candidates.append((i, w, h))
+                cap.release()      
+        if not candidates:
+            self.log("""Windows Camera Permissions:
+Ensure Windows camera access is enabled under Settings → Privacy & security → Camera, 
+including Let desktop apps access your camera. Also ensure Windows Camera Frame Server
+is not disabled. Otherwise, OpenCV may fail to detect or open cameras (MSMF/DirectShow).""")
             self.log("No compatible thermal camera found")
             return None
 
