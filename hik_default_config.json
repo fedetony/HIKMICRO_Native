@@ -1,0 +1,233 @@
+{
+    "version": 1,
+    "dt_when": "2026-11-10T18:26:42.684466",
+    "application": {
+        "name": "HIKMICRO Native",
+        "version": "1.0.0"
+    },
+    "view": {
+        "zoom": 1.0,
+        "center_x": 128,
+        "center_y": 96,
+        "show_hotspot": true,
+        "show_coldspot": true,
+        "show_grid": true,
+        "show_probes": true,
+        "show_masks": true,
+        "show_probe_labels": true,
+        "show_cursor": true,
+        "show_scale_bar_v": true,
+        "show_scale_bar_h": false,
+        "show_ruler_v": true,
+        "show_ruler_h": true,
+        "use_clahe": true,
+        "colormap": 14,
+        "show_scale_bar": true,
+        "show_center_cross": false,
+        "show_metadata": false,
+        "grid_spacing": 7
+    },
+    "logging": {
+        "enabled": false,
+        "interval_s": 1.0,
+        "duration_s": 0.0,
+        "max_file_size_mb": 100,
+        "format": "csv",
+        "output_path": ".",
+        "append_timestamp": true,
+        "add_header": true
+    },
+    "video": {
+        "enabled": false,
+        "filename_prefix": "video_",
+        "raw_format": "npz",
+        "append_timestamp": true,
+        "video_export": {
+            "record_report": true,
+            "fps": 0.0,
+            "vid_format": "mp4",
+            "report": {
+                "title": "Thermal Inspection",
+                "subtitle": "",
+                "company": "HIKMICRO",
+                "show_title": true,
+                "show_timestamp": true,
+                "show_version": true,
+                "show_statistics": true
+            }
+        }
+    },
+    "viewport": {
+        "x1": 0,
+        "y1": 0,
+        "x2": 256,
+        "y2": 192,
+        "zoom": 1.0
+    },
+    "calibration": {
+        "enabled": true,
+        "calibration_type": "POLYNOMIAL",
+        "file_name": "",
+        "coeffs": [
+            0.5,
+            -20.0
+        ],
+        "raw_values": null,
+        "temperature_values": null,
+        "display_unit": "\u00b0C"
+    },
+    "cursor": {
+        "unit": "Raw",
+        "decimals": 1,
+        "font_scale": 0.45,
+        "thickness": 1,
+        "color": [
+            255,
+            255,
+            255
+        ],
+        "shadow": true,
+        "mode": "AVERAGE"
+    },
+    "hotspot": {
+        "unit": "Raw",
+        "decimals": 1,
+        "font_scale": 0.55,
+        "thickness": 1,
+        "color": [
+            255,
+            0,
+            255
+        ],
+        "shadow": true,
+        "mode": "AVERAGE"
+    },
+    "coldspot": {
+        "unit": "Raw",
+        "decimals": 1,
+        "font_scale": 0.55,
+        "thickness": 1,
+        "color": [
+            255,
+            255,
+            0
+        ],
+        "shadow": true,
+        "mode": "AVERAGE"
+    },
+    "probes": [
+        {
+            "name": "TEST",
+            "x1": 50,
+            "y1": 50,
+            "x2": 120,
+            "y2": 120,
+            "log_enabled": false,
+            "color": [
+                0,
+                255,
+                0
+            ],
+            "text_settings": {
+                "unit": "\u00b0F",
+                "decimals": 1,
+                "font_scale": 0.4,
+                "thickness": 1,
+                "color": [
+                    255,
+                    255,
+                    255
+                ],
+                "shadow": true,
+                "mode": "AVERAGE"
+            },
+            "tracker_settings": {
+                "enabled": false,
+                "label": "Temperature",
+                "apply_calibration": true,
+                "color_avg": "#00ff00",
+                "color_min": "#0088ff",
+                "color_max": "#ff0000",
+                "line_width": 2,
+                "line_style": "solid"
+            },
+            "visible": true,
+            "show_hotspot": true,
+            "show_coldspot": true,
+            "line_thickness": 1,
+            "high_alarm": {
+                "enabled": false,
+                "threshold": 120,
+                "alarm_type": "ABOVE",
+                "blink": true,
+                "color": [
+                    0,
+                    0,
+                    255
+                ],
+                "message": "OVER TEMP",
+                "active": false,
+                "trigger_settings": {
+                    "enabled": false,
+                    "executable": "",
+                    "trigger_once": true,
+                    "trigger_count": 0
+                }
+            },
+            "low_alarm": {
+                "enabled": false,
+                "threshold": 120,
+                "alarm_type": "BELOW",
+                "blink": true,
+                "color": [
+                    0,
+                    0,
+                    255
+                ],
+                "message": "UNDER TEMP",
+                "active": false,
+                "trigger_settings": {
+                    "enabled": false,
+                    "executable": "",
+                    "trigger_once": true,
+                    "trigger_count": 0
+                }
+            }
+        }
+    ],
+    "masks": [
+        {
+            "name": "MASK NORMALIZED",
+            "x1": 169,
+            "y1": 40,
+            "x2": 202,
+            "y2": 126,
+            "enabled": true,
+            "raw_value": 128,
+            "mode": "NORMALIZED",
+            "normalize_min": 10,
+            "normalize_max": 128,
+            "log_enabled": false,
+            "visible": true,
+            "color": [
+                0,
+                255,
+                255
+            ],
+            "line_thickness": 1,
+            "text_settings": {
+                "unit": "Raw",
+                "decimals": 1,
+                "font_scale": 0.4,
+                "thickness": 1,
+                "color": [
+                    0,
+                    255,
+                    255
+                ],
+                "shadow": true,
+                "mode": "AVERAGE"
+            }
+        }
+    ]
+}
