@@ -2284,6 +2284,15 @@ class TypedItemDelegate(QtWidgets.QStyledItemDelegate):
             return node.get("meta", {})
         return {}
     
+    def _get_value(self,stored):
+        """Helper to get value"""
+        if isinstance(stored, dict):
+            node = stored.get("node")
+            if not isinstance(node,dict):
+                return None
+            return node.get("value")
+        return None
+    
     def _get_type_subtype(self,stored):
         """Helper to get type and subtype 
         Returns:
@@ -2329,6 +2338,7 @@ class TypedItemDelegate(QtWidgets.QStyledItemDelegate):
             editor.colorChanged.connect(self.commitData, QtCore.Qt.ConnectionType.DirectConnection)
             editor.colorChanged.connect(self.closeEditor, QtCore.Qt.ConnectionType.DirectConnection)
             editor.installEventFilter(self)
+            self._apply_background(index,self._get_value(stored))
             return editor
         
         # boolean as checkbox
@@ -2436,6 +2446,7 @@ class TypedItemDelegate(QtWidgets.QStyledItemDelegate):
             return
         if isinstance(editor, ColorEditor): 
             editor.setColor(val) 
+            self._apply_background(index)
             return
         # composite widget for small lists
         if hasattr(editor, "_editors"):
@@ -2475,6 +2486,7 @@ class TypedItemDelegate(QtWidgets.QStyledItemDelegate):
             new_val = editor.text()
         elif isinstance(editor, ColorEditor):
             new_val = editor.color().name(QtGui.QColor.NameFormat.HexArgb)
+            self._apply_background(index,new_val)
         else:
             new_val = None
 
@@ -2505,31 +2517,110 @@ class TypedItemDelegate(QtWidgets.QStyledItemDelegate):
             if event.type() == QtCore.QEvent.Type.FocusOut:
                 return True  # block default behavior
         return super().eventFilter(editor, event)
+    
+    def _apply_background(self, index, color=None):
+        if not color:
+            stored = index.data(USER_ROLE) or {}
+            # meta = self._get_meta(stored)
+            node = stored.get("node", {})
+            if not isinstance(node,dict):
+                return
+            color = node.get("value")
+        
+        try:
+            model = index.model()
+            item = model.itemFromIndex(index) if index.isValid() else None
+
+            if item is not None:
+                bg_color = QtGui.QColor(color)
+
+                font_color = (
+                    QtGui.QColor("black")
+                    if bg_color.lightness() > 127
+                    else QtGui.QColor("white")
+                )
+
+                item.setData(QtGui.QBrush(bg_color), QtCore.Qt.ItemDataRole.BackgroundRole)
+                item.setData(QtGui.QBrush(font_color), QtCore.Qt.ItemDataRole.ForegroundRole)
+
+        except AttributeError:
+            pass
+
 
 
 class ColorEditor(QtWidgets.QPushButton):
+
     colorChanged = QtCore.pyqtSignal(QtGui.QColor)
 
     def __init__(self, color=None, parent=None):
         super().__init__(parent)
+        self.wparent=parent
         self._color = QtGui.QColor(color) if color else QtGui.QColor("white")
+        self._ini_color = self._color
+        self._dialog = None
         self.setMaximumWidth(80)
-        self.update_style()
-        QtCore.QTimer.singleShot(0, self.pick_color)
-        # self.clicked.connect(self.pick_color)
+        self.clicked.connect(self.pick_color)
 
     def update_style(self):
-        self.setStyleSheet(f"background-color: {self._color.name(QtGui.QColor.NameFormat.HexArgb)};")
+        bg_color = self._color
+        # Choose contrasting font color
+        font_color = (
+            "black" if bg_color.lightness() > 127 else "white"
+        )
+        self.setStyleSheet(
+            f"""
+            background-color: {bg_color.name(QtGui.QColor.NameFormat.HexArgb)};
+            color: {font_color};
+            """
+        )
 
     def pick_color(self):
-        dlg = QtWidgets.QColorDialog(self._color, self, 
-           options=QtWidgets.QColorDialog.ColorDialogOption.DontUseNativeDialog)
+        # Don't create multiple dialogs
+        if self._dialog is not None:
+            self._dialog.raise_()
+            self._dialog.activateWindow()
+            return
+
+        dlg = QtWidgets.QColorDialog(self._color, self)
+        self._dialog = dlg
         dlg.setOption(QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel, True)
-        new = dlg.getColor()
-        if new.isValid():
-            self._color = new
-            self.update_style()
-            self.colorChanged.emit(new)
+        # Force Qt's own dialog instead of desktop native integration
+        dlg.setOption(QtWidgets.QColorDialog.ColorDialogOption.DontUseNativeDialog, True)
+        # Keep it associated with the parent window
+        dlg.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
+
+        dlg.currentColorChanged.connect(self._preview_color)
+        dlg.colorSelected.connect(self._select_color)
+        dlg.finished.connect(self._dialog_finished)
+        dlg.open()
+        dlg.setCurrentColor(self._color)
+        self.update_style()
+        # Activate after the window has been created
+        QtCore.QTimer.singleShot(100, lambda: self._activate_dialog(dlg))
+
+    def _activate_dialog(self, dlg):
+        if self._dialog is dlg:
+            dlg.raise_()
+            dlg.activateWindow()
+
+    def _preview_color(self, color):
+        self._color = color
+        self.update_style()
+
+    def _select_color(self, color):
+        self._color = color
+        self.update_style()
+        self.colorChanged.emit(color)
+
+    def _dialog_finished(self, result):
+        dlg = self._dialog
+        if dlg is not None:
+            # Restore original color if cancelled
+            if result != QtWidgets.QDialog.DialogCode.Accepted:
+                self._select_color(self._ini_color)
+
+            self._dialog = None
+            dlg.deleteLater()
 
     def color(self):
         return self._color

@@ -43,8 +43,10 @@ class Dialogs(QWidget):
                 "NPZ Recording Files (*.npz)"),
             10: ("All Files (*);;MP4 Video Files (*.mp4)",
                 "MP4 Video Files (*.mp4)"),
-            11: ("NumPy Files (*.npy)", "NumPy Files (*.npy)"),
-            12: ("CSV Files (*.csv)", "CSV Files (*.csv)"),
+            11: ("All Files (*);;NumPy Files (*.npy)", 
+                 "NumPy Files (*.npy)"),
+            12: ("All Files (*);;CSV Files (*.csv)", 
+                 "CSV Files (*.csv)"),
         }
 
         self.default_filter = ("All Files (*)", "All Files (*)")

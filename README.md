@@ -220,6 +220,11 @@ The PyQt6 interface provides a more complete graphical environment for interacti
 ### Python requirements
 
 Create a virtual environment:
+Linux:
+
+`python3 -m venv .venv`
+
+Windows:
 
 `python -m venv .venv`
 

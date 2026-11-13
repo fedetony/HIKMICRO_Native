@@ -707,6 +707,11 @@ class MainWindow(QMainWindow):
         actLoadTable.setIcon(self.icons.icon("presentation chart bar"))
         menu_file.addAction(actLoadTable)
 
+        actsaveCalib = QAction("Save Calibration",self)
+        actsaveCalib.triggered.connect(self.save_calibration)
+        actsaveCalib.setIcon(self.icons.icon("document chart bar"))
+        menu_file.addAction(actsaveCalib)
+
         menu_file.addSeparator()
 
         actExit = QAction("Exit", self)
@@ -798,6 +803,7 @@ class MainWindow(QMainWindow):
             self.cam.set_event_callback(self.on_camera_event)
             self.log("Camera connected")
             self.last_cam_state = self.cam.state
+            self.set_output_path_to_cam()
             self.refresh_struct_and_load_to_tree()
         except Exception as ex:
             self.log(f"Error while connecting: {ex}")
@@ -808,6 +814,7 @@ class MainWindow(QMainWindow):
             self.cam.set_event_callback(self.on_camera_event)
             self.log("Virtual Camera Connected")
             self.last_cam_state = self.cam.state
+            self.set_output_path_to_cam()
             self.refresh_struct_and_load_to_tree()
         except Exception as ex:
             self.log(f"Error while connecting: {ex}")
@@ -1059,6 +1066,8 @@ class MainWindow(QMainWindow):
             track=self.struct_builder.set_camera_output_file(
                 self.cam,str(self.output_path),self.tracker)
             self.hik_tv.set_tracked_value_to_dict(track,str(self.output_path),self.hik_struct,'',True)
+        msg= f"Output Path: {str(self.output_path)}"
+        self.statusBar().showMessage(msg)
             # self.on_tree_item_edited(track,str(self.output_path),'str','')
 
     def build_snapshot_menu(self):
@@ -1125,9 +1134,26 @@ class MainWindow(QMainWindow):
         pixmap.save(str(filename))
         self.log("Saved", filename)
 
+    def save_calibration(self):
+        if not self.cam:
+            return
+        save_filter = None
+        if self.cam.calibration.calibration_type == "POLYNOMIAL":
+            save_filter = 11
+        elif self.cam.calibration.calibration_type == "TABLE":
+            save_filter = 12 
+        if save_filter is not None:
+            filename = self.dialogs.saveFileDialog(
+                filter=save_filter,
+                title="Save Configuration"
+            )
+            self.cam.save_calibration(filename)
+
     def load_polynomial(self):
+        if not self.cam:
+            return
         filename = self.dialogs.openFileNameDialog(
-            filter=0,  # Or add a dedicated NPY filter
+            filter=11,  # Or add a dedicated NPY filter
             title="Load Polynomial"
         )
 
@@ -1136,6 +1162,8 @@ class MainWindow(QMainWindow):
             self.log("Loaded polynomial", filename)
 
     def load_table(self):
+        if not self.cam:
+            return
         filename = self.dialogs.openFileNameDialog(
             filter=12,
             title="Load Table"

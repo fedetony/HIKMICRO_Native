@@ -848,6 +848,11 @@ class HIKStructBuilder:
 
         if eho.event.event_type == CameraEvent.CALIBRATION_CHANGED:
             state.calibration_changed = False
+            val_nd=st.get_validate_node_as_obj(["Configuration", "Calibration"])
+            for nd_key in val_nd.children_keys:
+                track=["Configuration", "Calibration", nd_key, "value"]
+                value = getattr(eho.event.data, nd_key)
+                st.set_value(track, value)
             log_callback("Calibration Chaged")
 
         if eho.event.event_type == CameraEvent.VIEW_CHANGED:

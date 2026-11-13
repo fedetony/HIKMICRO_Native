@@ -1032,6 +1032,18 @@ is not disabled. Otherwise, OpenCV may fail to detect or open cameras (MSMF/Dire
             self.state.masks_changed = True
             self.emit_event(CameraEvent.MASK_REMOVED, name)
     
+    def rename_mask(self,name,newname):
+        if newname in self.masks:
+            self.emit_event(CameraEvent.LOG_MESSAGE,f"Mask '{newname}' is not available")
+            return
+        if name in self.masks.keys():
+            mask = self.masks[name]
+            mask.name = newname
+            self.remove_mask(name)
+            self.masks[newname]=mask
+            self.state.masks_changed = True
+            self.emit_event(CameraEvent.MASK_ADDED, self.masks[newname])
+    
     def get_mask(self, name)->MaskArea:
         return self.masks.get(name, None)
     
@@ -1083,6 +1095,18 @@ is not disabled. Otherwise, OpenCV may fail to detect or open cameras (MSMF/Dire
             del self.probes[name]
             self.state.probes_changed = True
             self.emit_event(CameraEvent.PROBE_REMOVED, name)
+    
+    def rename_probe(self,name,newname):
+        if newname in self.probes:
+            self.emit_event(CameraEvent.LOG_MESSAGE,f"Probe '{newname}' is not available")
+            return
+        if name in self.probes.keys():
+            probe = self.probes[name]
+            probe.name = newname
+            self.remove_probe(name)
+            self.probes[newname]=probe
+            self.state.probes_changed = True
+            self.emit_event(CameraEvent.PROBE_ADDED, self.probes[newname])
     
     def get_probe(self, name)->ProbeArea:
         return self.probes.get(name, None)
@@ -1912,6 +1936,15 @@ is not disabled. Otherwise, OpenCV may fail to detect or open cameras (MSMF/Dire
         self.state.calibration_changed = True
         self.emit_event(CameraEvent.CALIBRATION_CHANGED, self.calibration)
     
+    def save_calibration(self, filename):
+        if self.calibration.calibration_type == "POLYNOMIAL":
+            np.save(filename, self.calibration.coeffs)
+        elif self.calibration.calibration_type == "TABLE":   
+            data = np.array(list(zip(self.calibration.raw_values, 
+                self.calibration.temperature_values)))
+            header = "Raw, Temp °C"  
+            np.savetxt(filename,data,delimiter=",",header=header)
+            
     def raw_to_celsius(self, raw_value):
         if not self.calibration.enabled:
             return float(raw_value)
