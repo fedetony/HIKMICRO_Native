@@ -280,6 +280,26 @@ No Linux-specific V4L2 utilities are required.
 
 The application uses platform-specific camera acquisition while sharing the thermal processing and GUI implementation.
 
+### Standalone Binary
+
+To generate a standalone binary for the GUI you can use Nuitka:
+
+`pip install nuitka`
+
+`python -m nuitka --standalone --enable-plugin=pyqt6 hik_app_main.py`
+
+Add the missing dependencies to your distribution:
+
+```
+img\
+docs\
+README.md
+LICENSE.txt
+hik_default_config.json
+```
+
+In Linux add executable permissions to the `hik_app_main` binary.
+
 ## Quick Start
 
 ### GUI
