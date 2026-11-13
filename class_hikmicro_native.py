@@ -1937,13 +1937,20 @@ is not disabled. Otherwise, OpenCV may fail to detect or open cameras (MSMF/Dire
         self.emit_event(CameraEvent.CALIBRATION_CHANGED, self.calibration)
     
     def save_calibration(self, filename):
+        cal_changed=False
         if self.calibration.calibration_type == "POLYNOMIAL":
             np.save(filename, self.calibration.coeffs)
+            cal_changed=True
         elif self.calibration.calibration_type == "TABLE":   
             data = np.array(list(zip(self.calibration.raw_values, 
                 self.calibration.temperature_values)))
             header = "Raw, Temp °C"  
             np.savetxt(filename,data,delimiter=",",header=header)
+            cal_changed=True
+        if cal_changed and self.calibration.file_name != filename:
+            self.calibration.file_name=filename
+            self.state.calibration_changed = True
+            self.emit_event(CameraEvent.CALIBRATION_CHANGED, self.calibration)
             
     def raw_to_celsius(self, raw_value):
         if not self.calibration.enabled:
