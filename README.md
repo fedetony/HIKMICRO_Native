@@ -6,6 +6,9 @@ HIKMICRO Native is a Python-based thermal imaging application designed for HIKMI
 
 It provides live thermal image acquisition, temperature analysis, calibration, measurement regions, alarms, logging, video recording and visualization.
 
+![HIKMICRO_Native](img/main_window_connected_trackers.png)
+
+
 The application is built around a reusable thermal imaging engine, with two different interfaces:
 
 - A standalone OpenCV interface.
