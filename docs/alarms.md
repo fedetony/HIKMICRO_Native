@@ -70,14 +70,14 @@ When trigger_once is enabled, the trigger is executed only once for the activati
 This prevents accidental repeated execution during continuous alarm conditions.
 
 ## Python Trigger Example
-
+```python
 import sys
 
 print("Alarm Triggered")
 
 for index, value in enumerate(sys.argv):
     print(index, value)
-
+```
 Example output:
 
 Probe1
@@ -86,6 +86,7 @@ HIGH
 
 ## Windows Batch Trigger Example
 
+```bash
 @echo off
 
 echo Alarm Triggered
@@ -94,14 +95,16 @@ echo Alarm Type: %2
 echo Value: %3
 
 pause
+```
 
 ## Linux Shell Trigger Example
 
+```shell
 #!/bin/bash
 
 echo "Alarm Triggered"
 echo "Probe: $1"
 echo "Alarm Type: $2"
 echo "Value: $3"
-
+```
 
