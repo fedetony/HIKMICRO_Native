@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 from enum import Enum
 from dataclasses import dataclass, field, asdict
-from copy import copy
+from copy import copy, deepcopy
 from collections import deque
 from datetime import datetime
 import csv
@@ -1044,6 +1044,17 @@ is not disabled. Otherwise, OpenCV may fail to detect or open cameras (MSMF/Dire
             self.state.masks_changed = True
             self.emit_event(CameraEvent.MASK_ADDED, self.masks[newname])
     
+    def clone_mask(self,name,newname):
+        if newname in self.masks:
+            self.emit_event(CameraEvent.LOG_MESSAGE,f"Mask '{newname}' is not available")
+            return
+        if name in self.masks.keys():
+            mask = deepcopy(self.masks[name])
+            mask.name = newname
+            self.masks[newname]=mask
+            self.state.masks_changed = True
+            self.emit_event(CameraEvent.MASK_ADDED, self.masks[newname])
+    
     def get_mask(self, name)->MaskArea:
         return self.masks.get(name, None)
     
@@ -1104,6 +1115,17 @@ is not disabled. Otherwise, OpenCV may fail to detect or open cameras (MSMF/Dire
             probe = self.probes[name]
             probe.name = newname
             self.remove_probe(name)
+            self.probes[newname]=probe
+            self.state.probes_changed = True
+            self.emit_event(CameraEvent.PROBE_ADDED, self.probes[newname])
+    
+    def clone_probe(self,name,newname):
+        if newname in self.probes:
+            self.emit_event(CameraEvent.LOG_MESSAGE,f"Probe '{newname}' is not available")
+            return
+        if name in self.probes.keys():
+            probe = deepcopy(self.probes[name])
+            probe.name = newname
             self.probes[newname]=probe
             self.state.probes_changed = True
             self.emit_event(CameraEvent.PROBE_ADDED, self.probes[newname])

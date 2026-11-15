@@ -95,7 +95,7 @@ from functional.class_struct_conditioner import ConditionEngine
 from class_hikstruct_builder import HIKStructBuilder
 import functional.resources
 from functional.class_icons import Icons
-from functional.class_File_Dialogs import Dialogs
+from functional.class_File_Dialogs import Dialogs,AskNewNameDialog
 from functional.class_tracker_plot import (TrackerPlot, 
     TrackerPlotsContainer, TrackerPlotsContainerControls, TrackerWindow)
 
@@ -248,6 +248,7 @@ class MainWindow(QMainWindow):
         self.plot_trackers = {}
         self.struct_builder=HIKStructBuilder(self.hik_struct, self)
         self.all_icons_dict={}
+        self._set_icons_to_menu_icon_map()
         self._build_trackers()
         self._build_ui()
         self._build_conf_tree()
@@ -284,9 +285,277 @@ class MainWindow(QMainWindow):
         # Right click Menu 
         self.hik_tv.treeviewobj.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.hik_tv.treeviewobj.customContextMenuRequested.connect(self.hik_tv._on_context_menu)
-        #self.hik_tv.item_right_clicked.connect(self.on_item_right_clicked)
+        self.hik_tv.item_right_clicked.connect(self.on_item_right_clicked)
         
         self.hik_tv.do_refresh()
+    
+    def on_item_right_clicked(self,index:QtCore.QModelIndex, info_dict: dict, pos: QtCore.QPoint):
+        """Right click menu"""
+        self.build_context_menu(index,info_dict,pos)
+    
+    def build_context_menu(self, index: QtCore.QModelIndex, info_dict: dict, pos: QtCore.QPoint):
+        """Build and display the context menu for the selected Items."""
+        if not index.isValid():
+            return
+        selection_model = self.hik_tv.treeviewobj.selectionModel()
+        if selection_model is None:
+            return
+        # ---------------------------------------------------------
+        # Selected rows
+        # ---------------------------------------------------------
+        selected_indexes = selection_model.selectedRows(index.column())
+        selected_items = []
+        for idx in selected_indexes:
+            stored = idx.data(USER_ROLE)
+            if not isinstance(stored, dict):
+                continue
+
+            selected_items.append({
+                "index": idx,
+                "node": stored.get("node", {}),
+                "track": stored.get("path", []),
+                "stored": stored,
+            })
+
+        # Make sure the right-clicked item is represented.
+        if not selected_items:
+            selected_items.append({
+                "index": index,
+                "node": info_dict.get("node", {}),
+                "track": info_dict.get("path", []),
+                "stored": info_dict,
+            })
+
+        # ---------------------------------------------------------
+        # Context
+        # ---------------------------------------------------------
+        context = {
+            "index": index,
+            "node": info_dict.get("node", {}),
+            "track": info_dict.get("path", []),
+            "stored": info_dict,
+            "field": str(
+                self.hik_tv.track_from_index(index)[-1]
+            ).upper(),
+            "selected_items": selected_items,
+        }
+
+        # ---------------------------------------------------------
+        # Build menu
+        # ---------------------------------------------------------
+        if len(info_dict.get("path", []))<3 and len(info_dict.get("path", []))>1:
+            return
+        menu = None
+        count = len(selected_items)
+        if count == 1:
+            menu = self.build_single_menu(
+                selected_items[0],
+                context
+            )
+        elif count > 1:
+            menu = self.build_multi_menu(
+                selected_items,
+                context
+            )
+
+        # ---------------------------------------------------------
+        # Show menu
+        # ---------------------------------------------------------
+        if menu is not None and menu.actions():
+            menu.exec(self.hik_tv.treeviewobj.viewport().mapToGlobal(pos))
+    
+    def _set_icons_to_menu_icon_map(self):
+        """Menu icons"""
+        self.menu_enabled_item = {}
+        self.menu_icon_item = {
+            "Create Probe": self.icons.icon("eye dropper"),
+            "Rename Probe": self.icons.icon("chat bubble bottom center text"),
+            "Clone Probe": self.icons.icon("document duplicate"),
+            "Delete Probe": self.icons.icon("delete map"),
+
+            "Create Mask": self.icons.icon("face smile solid"),
+            "Rename Mask": self.icons.icon("chat bubble bottom center text"),
+            "Clone Mask": self.icons.icon("document duplicate"),
+            "Delete Mask": self.icons.icon("face frown solid"),
+            
+            "Clear Alarm": self.icons.icon("bell slash"),
+            "Toggle Enable": self.icons.icon("arrows right left"),
+        }
+
+    def build_single_menu(self, selected_item, context):
+        menu = QtWidgets.QMenu(f'Menu "{selected_item["track"][-1]}"')
+        is_mask=False
+        is_probe=False
+        item = ""
+        if "Probes" in selected_item["track"]:
+            is_probe=True
+            item = "Probe"
+        if "Masks" in selected_item["track"]:
+            is_mask=True
+            item = "Mask"
+        if not is_probe and not is_mask:
+            return menu
+
+        for name, callback in [
+            (f"Create {item}", self._menu_create_item),
+            (f"Rename {item}", self._menu_rename_item),
+            (f"Clone {item}", self._menu_clone_item),
+            (f"Delete {item}", self._menu_delete_item),
+        ]:
+            self._add_action_to_menu(menu, name, callback, context)
+        
+        # if is_probe:
+        #     menu.addSeparator()
+
+        #     for name, callback in [
+        #         ("Clear Alarm", self._menu_clear_alarm),
+        #         #("Toggle Enable", self._menu_toggle_enable),
+        #     ]:
+        #         self._add_action_to_menu(menu, name, callback, context)
+
+        # if is_mask:
+        #     menu.addSeparator()
+
+        #     for name, callback in [
+        #         ("Toggle Enable", self._menu_toggle_enable),
+        #     ]:
+        #         self._add_action_to_menu(menu, name, callback, context)
+        
+
+        return menu
+    
+    def _menu_create_item(self, context):
+        track=context["track"]
+        if len(track)>2:
+            name = track[2]
+        else:
+            return
+        if track[1] == "Probes":
+            is_probe=True
+        else:
+            is_probe=False
+        if is_probe:
+            name = f"P{self.cam.next_probe_id}"
+            self.cam.next_probe_id += 1
+            self.cam.add_probe(name,10,10,20,20)
+        else:
+            name = f"MASK{self.cam.next_mask_id}"
+            self.cam.next_mask_id += 1
+            self.cam.add_mask(name,10,10,20,20)
+
+    def _matches_regex(self, text, pattern) -> bool:
+        """Return True if text fully matches pattern (pattern can be a regex string)."""
+        try:
+            import re
+            return re.fullmatch(str(pattern), str(text)) is not None
+        except Exception:
+            return False
+        
+    def _menu_rename_item(self, context):
+        # print(context)
+        track=context["track"]
+        if len(track)>2:
+            name = track[2]
+        else:
+            return
+        if track[1] == "Probes":
+            is_probe=True
+            item="Probe"
+        else:
+            is_probe=False
+            item="Mask"
+        def validate_call(new_name):
+            pattern="^[A-Za-z0-9_-]{1,64}$"
+            if not self._matches_regex(new_name,pattern):
+                return False
+            if is_probe:
+                if new_name in self.cam.probes.keys():
+                    return False
+                return True
+            if new_name in self.cam.masks.keys():
+                return False
+            return True
+        dialog = AskNewNameDialog(text_description=f"Rename {name}",
+                         parent=self, 
+                         title=f"New {item} Name",
+                         validation_callback=validate_call,
+                         default_name = name
+                         )
+        if dialog.exec() != QtWidgets.QDialog.DialogCode.Accepted:
+            log.debug(" User did not accept")
+            return
+        newname = dialog.get_text()
+        if not newname:
+            return
+        if is_probe:
+            self.cam.rename_probe(name,newname)
+        else:
+            self.cam.rename_mask(name,newname)
+
+    def _menu_clone_item(self, context):
+        track=context["track"]
+        if len(track)>2:
+            name = track[2]
+        else:
+            return
+        if track[1] == "Probes":
+            is_probe=True
+        else:
+            is_probe=False
+        if is_probe:
+            self.cam.clone_probe(name, name + "_clone")
+        else:
+            self.cam.clone_mask(name, name + "_clone")
+
+    def _menu_delete_item(self, context):
+        track=context["track"]
+        if len(track)>2:
+            name = track[2]
+        else:
+            return
+        if track[1] == "Probes":
+            is_probe=True
+        else:
+            is_probe=False
+        if is_probe:
+            self.cam.remove_probe(name)
+        else:
+            self.cam.remove_mask(name)
+
+    def _menu_clear_alarm(self, context):
+        print(context)
+
+    def _menu_toggle_enable(self, context):
+        print(context)
+
+
+    def build_multi_menu(self, selected_items, context):
+        menu = QtWidgets.QMenu(f"{len(selected_items)} Items Selected")
+        # self._update_menu_enabled_states()
+        # for name, callback in [
+        #     ("Search Maps", self._menu_search_item),
+        #     ("Delete Selected Maps", self._menu_delete_items),
+        #     ("Update Selected Maps", self._menu_update_items),
+        # ]:
+        #     self._add_action_to_menu(menu, name, callback, context)
+
+        return menu
+
+    def _add_action_to_menu(self, menu, name, callback, context=None):
+        """Create and configure a menu action."""
+        action = menu.addAction(name)
+
+        if icon := self.menu_icon_item.get(name):
+            action.setIcon(icon)
+
+        is_enabled = self.menu_enabled_item.get(name, True)
+
+        action.setEnabled(is_enabled)
+        action.triggered.connect(
+            lambda: callback(context) if context else callback()
+        )
+
+        return action
 
     @property
     def tracker(self):

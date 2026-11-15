@@ -140,7 +140,7 @@ class VideoRecorder:
         self.last_timestamp = timestamp
 
         self.raw_frames.append(
-            self.cam.thermal_frame.copy()
+            self.cam.raw_frame.copy()
         )
 
         self.raw_timestamps.append(

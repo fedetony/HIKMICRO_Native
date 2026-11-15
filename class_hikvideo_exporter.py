@@ -30,7 +30,6 @@ class VideoExporter:
                 npz_file,
                 allow_pickle=True
             )
-
             thermal_frames = data["thermal_frames"]
             timestamps = data["timestamps"]
             if len(thermal_frames) == 0:
@@ -51,9 +50,11 @@ class VideoExporter:
                 f"Exporting {total_frames} frames "
                 f"({actual_fps:.2f} FPS recorded)"
             )
-            for i, (th_frame,tstamp) in enumerate(zip(thermal_frames,timestamps)):
+            for i, (raw_frame,tstamp) in enumerate(zip(thermal_frames,timestamps)):
                 # Replay frame
-                self.cam.thermal_frame = (th_frame.copy())
+                self.cam.thermal_frame = raw_frame[0:self.cam.THERMAL_H,:,0].copy()
+                self.cam.last_metadata_frame = self.cam.metadata_frame
+                self.cam.metadata_frame = raw_frame[self.cam.THERMAL_H:self.cam.RAW_H,:,0].copy()
                 display = (
                     self.cam.create_display_frame_from_current(
                         self.cam.view_settings.display_width,

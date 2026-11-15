@@ -8,6 +8,7 @@ from PyQt6 import QtWidgets
 from PyQt6.QtCore import QUrl
 from PyQt6.QtWidgets import QWidget, QFileDialog
 from PyQt6.QtWidgets import QMessageBox, QPushButton
+from typing import Callable, Any
 import os
 
 class Dialogs(QWidget):
@@ -311,3 +312,84 @@ class DeleteConfirmDialog(QtWidgets.QDialog):
         """Return True only if user typed DELETE."""
         return self.line_edit.text().strip().upper() == "DELETE"
 
+
+class AskNewNameDialog(QtWidgets.QDialog):
+
+    def __init__(
+        self,
+        text_description,
+        parent=None,
+        title="New Name",
+        default_name=None,
+        validation_callback: Callable = None,
+    ):
+        super().__init__(parent)
+        if not validation_callback:
+            self.validate_callback=self._no_validation_callback
+        else:    
+            self.validate_callback=validation_callback
+        
+        self.default_name=default_name
+
+        self.setWindowTitle(title)
+        self.setModal(True)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        top_layout = QtWidgets.QHBoxLayout()
+        icon_label = QtWidgets.QLabel()
+        icon = self.style().standardIcon(
+            QtWidgets.QStyle.StandardPixmap.SP_MessageBoxQuestion
+        )
+        icon_label.setPixmap(icon.pixmap(48, 48))
+        top_layout.addWidget(icon_label)
+
+        text_label = QtWidgets.QLabel(text_description)
+
+        text_label.setWordWrap(True)
+        top_layout.addWidget(text_label, 1)
+
+        layout.addLayout(top_layout)
+
+        self.line_edit = QtWidgets.QLineEdit()
+        if not self.default_name:
+            self.line_edit.setPlaceholderText(
+                "Type Here..."
+            )
+        else:
+            self.line_edit.setText(self.default_name)
+        self.line_edit.setMinimumWidth(300)
+        self.line_edit.setMinimumHeight(28)
+        layout.addWidget(self.line_edit)
+
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok |
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        )
+
+        self.ok_button = buttons.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
+        
+        self.ok_button.setEnabled(False)
+        self.line_edit.textChanged.connect(self._update_ok_button)
+
+
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+
+        layout.addWidget(buttons)
+        self._update_ok_button(self.line_edit.text().strip())
+
+    def _update_ok_button(self, text):
+        if text:
+            self.ok_button.setEnabled(self.validate_callback(text.strip()))
+
+    def _no_validation_callback(self,txt)->bool:
+        return True
+    
+    def confirmed(self):
+        return self.validate_callback(self.line_edit.text().strip())
+    
+    def get_text(self):
+        text=self.line_edit.text().strip()
+        if self.validate_callback(text):
+            return text
+        return ""
