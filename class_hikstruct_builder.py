@@ -743,7 +743,9 @@ class HIKStructBuilder:
                             value=self.treemode_to_maskmode(value)
                         current[path[-1]] = value
                         return
-        if isinstance(path,list):
+        if isinstance(path,list) and path:
+            if path[0] == "probes" or path[0] == "masks":
+                return
             current = conf
             for part in path[:-1]:
                 current = current[part]

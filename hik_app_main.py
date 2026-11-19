@@ -737,7 +737,7 @@ class MainWindow(QMainWindow):
     @QtCore.pyqtSlot(list, object, str, str)
     def on_tree_item_edited(self, track, value, typestr, subtype):
         # Decide what to do with item value changed from user
-        print(">>>>>>>Debug Entered Data Changed")
+        # print(">>>>>>>Debug Entered Data Changed")
         if self.change_origin in ( OriginType.CAM,):
             return
         print("Debug Data Changed: ",track, value, typestr, subtype)
@@ -750,7 +750,7 @@ class MainWindow(QMainWindow):
     @QtCore.pyqtSlot(list, object, str, str)
     def on_struct_item_edited(self, track, value, typestr, subtype):
         # Decide what to do with item value changed from code
-        print(">>>>>>>>Debug Entered Internal Data Changed")
+        # print(">>>>>>>>Debug Entered Internal Data Changed")
         if self.change_origin in ( OriginType.QT, OriginType.NONE):
             return
         # self.change_origin = OriginType.CAM
